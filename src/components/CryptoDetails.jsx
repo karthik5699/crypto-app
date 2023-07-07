@@ -7,6 +7,7 @@ import { MoneyCollectOutlined, DollarCircleOutlined, FundOutlined, ExclamationCi
 
 import { useGetCryptoDetailsQuery, useGetCryptoHistoryQuery } from '../services/cryptoApi';
 import LineChart from './LineChart';
+import CryptoChart from './CryptoChart';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -18,9 +19,23 @@ const CryptoDetails = () => {
   const { data: coinHistory, isFetchingHistory } = useGetCryptoHistoryQuery({coinId, timePeriod});
   const cryptoDetails = data?.data?.coin;
   
-  const time = ['3h', '24h', '7d', '30d', '1y', '3m', '3y', '5y'];
+  const time = ['24h', '7d', '30d', '3m', '1y', '3y', '5y'];
+
+
+  const results = [];
 
   if (isFetching) return 'Loading...'
+
+  if(!isFetching && !isFetchingHistory && coinHistory && coinHistory.status === "success"){
+    coinHistory?.data?.history.forEach(obj => {
+      results.push([obj.timestamp * 1000, Number(parseFloat(obj.price).toFixed(2))])
+    });
+    results.sort((a, b) => a[0] - b[0])
+  }
+
+
+  
+  
 
   
 
@@ -48,11 +63,22 @@ const CryptoDetails = () => {
         </Title>
         <p>{cryptoDetails.name} live price in US Dollars. And other statistics</p>
       </Col>
-      <Select defaultValue="7d" className='select-timeperiod' placeholder="Select Time Period" onChange={(value) => setTimePeriod(value)}>
-        {time.map((date) => <Option key={date}>{date}</Option>)}
-      </Select>
-      {/*  Line chart   */}
-      {!isFetching && !isFetchingHistory && <LineChart coinHistory={coinHistory} currentPrice={millify(cryptoDetails.price)} coinName={cryptoDetails.name}/>}
+      <Row>
+        <Col>
+          <Select defaultValue="7d" className='select-timeperiod' placeholder="Select Time Period" onChange={(value) => setTimePeriod(value)}>
+          {time.map((date) => <Option key={date}>{date}</Option>)}
+        </Select>
+        </Col>
+        <Col>
+          <p className='coinChange'>
+          Change: {coinHistory?.data?.change}%
+        </p>
+        </Col>
+      </Row>
+      
+      
+       {/* Line chart    */}
+      {!isFetching && !isFetchingHistory && <CryptoChart data={results} name={cryptoDetails.name} />}
       
 
       <Col className='stats-container'>
